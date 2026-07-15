@@ -229,7 +229,7 @@ export function QrScannerPage() {
         severity: 'success',
       })
     } catch (error) {
-      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation KidCoins impossible.'), severity: 'error' })
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation en euros impossible.'), severity: 'error' })
     } finally {
       setPendingDebit(null)
       setOperation(null)
@@ -251,7 +251,7 @@ export function QrScannerPage() {
       <PageHeader
         eyebrow="Scanner"
         title="Scanner un QR code"
-        description="Ouvrez la camera, scannez le QR code d'un enfant, puis ajoutez ou retirez des KidCoins."
+        description="Ouvrez la camera, scannez le QR code d'un enfant, puis ajoutez ou retirez des €."
       />
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 360px' }, gap: 2.5 }}>
         <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>

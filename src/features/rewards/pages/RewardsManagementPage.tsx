@@ -103,7 +103,7 @@ export function RewardsManagementPage() {
       <PageHeader
         eyebrow="Recompenses"
         title="Catalogue familial"
-        description="Creez, modifiez et desactivez les recompenses disponibles contre des KidCoins."
+        description="Creez, modifiez et desactivez les recompenses disponibles contre des €."
         actions={
           <Button
             variant="contained"

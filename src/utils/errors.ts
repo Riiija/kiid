@@ -3,7 +3,7 @@ const translatedErrorPatterns: Array<[RegExp, string]> = [
   [/email not confirmed/i, "Votre email n'est pas encore confirme."],
   [/authentication required/i, 'Connexion requise pour continuer.'],
   [/jwt.*expired|invalid jwt|refresh token/i, 'Votre session a expire. Reconnectez-vous.'],
-  [/only active parents can create child transactions/i, 'Seul un parent actif peut ajouter ou retirer des KidCoins.'],
+  [/only active parents can create child transactions/i, 'Seul un parent actif peut ajouter ou retirer des euros.'],
   [/only active parents can scan qr codes/i, 'Seul un parent actif peut scanner un QR code enfant.'],
   [/amount must be greater than zero/i, 'Le montant doit etre superieur a zero.'],
   [/description is required/i, 'La description est obligatoire.'],

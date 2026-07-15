@@ -4,7 +4,7 @@ export function formatKidCoins(amount: number, includeSign = false) {
     signDisplay: includeSign ? 'always' : 'auto',
   })
 
-  return `${formatter.format(amount)} KidCoins`
+  return `${formatter.format(amount)} €`
 }
 
 export function formatDateLabel(date: string) {

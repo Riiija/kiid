@@ -38,7 +38,7 @@ export function ChildDashboardPage() {
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h1">Salut {child.firstName}</Typography>
-            <Typography color="text.secondary">Tes KidCoins sont prets.</Typography>
+            <Typography color="text.secondary">Ton solde est pret.</Typography>
           </Box>
         </Stack>
       </Stack>
@@ -60,7 +60,7 @@ export function ChildDashboardPage() {
                 <Typography variant="h2">Recompenses disponibles</Typography>
               </Stack>
               {affordableRewards.length === 0 ? (
-                <EmptyState title="Aucune recompense disponible." description="Continue a economiser des KidCoins." />
+                <EmptyState title="Aucune recompense disponible." description="Continue a economiser des €." />
               ) : (
                 <Stack spacing={1.25}>
                   {affordableRewards.slice(0, 2).map((reward) => (

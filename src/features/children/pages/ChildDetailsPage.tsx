@@ -92,7 +92,7 @@ export function ChildDetailsPage() {
         severity: 'success',
       })
     } catch (error) {
-      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation KidCoins impossible.'), severity: 'error' })
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation en euros impossible.'), severity: 'error' })
     } finally {
       setOperation(null)
       setPendingDebit(null)

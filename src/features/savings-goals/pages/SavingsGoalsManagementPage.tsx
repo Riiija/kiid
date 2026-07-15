@@ -6,6 +6,7 @@ import { EmptyState } from '../../../components/common/EmptyState'
 import { PageHeader } from '../../../components/common/PageHeader'
 import { PageSkeleton } from '../../../components/common/PageSkeleton'
 import { SavingsGoalCard } from '../../../components/common/SavingsGoalCard'
+import { formatKidCoins } from '../../../utils/formatters'
 import { useChildren } from '../../children/hooks/useChildren'
 import { useSavingsGoals } from '../hooks/useSavingsGoals'
 
@@ -47,13 +48,13 @@ export function SavingsGoalsManagementPage() {
         <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
           <CardContent>
             <Typography color="text.secondary">Montant actuel</Typography>
-            <Typography variant="h2">{totalCurrent} KidCoins</Typography>
+            <Typography variant="h2">{formatKidCoins(totalCurrent)}</Typography>
           </CardContent>
         </Card>
         <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
           <CardContent>
             <Typography color="text.secondary">Montant cible</Typography>
-            <Typography variant="h2">{totalTarget} KidCoins</Typography>
+            <Typography variant="h2">{formatKidCoins(totalTarget)}</Typography>
           </CardContent>
         </Card>
       </Box>

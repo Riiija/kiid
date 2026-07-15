@@ -75,7 +75,7 @@ export function RewardFormDialog({ open, reward, onClose, onSave }: RewardFormDi
             fullWidth
           />
           <TextField
-            label="Cout en KidCoins"
+            label="Cout en €"
             value={cost}
             onChange={(event) => setCost(event.target.value)}
             type="number"

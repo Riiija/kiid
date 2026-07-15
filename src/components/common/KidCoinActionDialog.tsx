@@ -71,7 +71,7 @@ export function KidCoinActionDialog({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{operation === 'credit' ? 'Ajouter des KidCoins' : 'Retirer des KidCoins'}</DialogTitle>
+      <DialogTitle>{operation === 'credit' ? 'Ajouter des €' : 'Retirer des €'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField
@@ -89,7 +89,7 @@ export function KidCoinActionDialog({
             ))}
           </TextField>
           <TextField
-            label="Montant"
+            label="Montant en €"
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
             type="number"

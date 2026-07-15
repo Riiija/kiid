@@ -91,7 +91,7 @@ export function ParentDashboardPage() {
         severity: 'success',
       })
     } catch (error) {
-      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation KidCoins impossible.'), severity: 'error' })
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation en euros impossible.'), severity: 'error' })
     } finally {
       setDialogOperation(null)
       setSelectedChild(undefined)
@@ -114,7 +114,7 @@ export function ParentDashboardPage() {
       <PageHeader
         eyebrow="Espace parent"
         title={`Bonjour ${parentUser.firstName}`}
-        description="Vue rapide des KidCoins, objectifs et demandes de recompenses."
+        description="Vue rapide des soldes, objectifs et demandes de recompenses."
         actions={
           <>
             <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => openAction('credit')}>
