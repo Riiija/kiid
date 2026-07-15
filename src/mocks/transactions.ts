@@ -1,0 +1,88 @@
+import type { KidTransaction } from '../types/transaction'
+
+export const transactions: KidTransaction[] = [
+  {
+    id: 'tx-1',
+    childId: 'lucas',
+    amount: 20,
+    type: 'credit',
+    description: 'Aide au jardin',
+    createdAt: '2026-07-14T17:30:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 125,
+  },
+  {
+    id: 'tx-2',
+    childId: 'noah',
+    amount: -10,
+    type: 'debit',
+    description: 'Petit cadeau',
+    createdAt: '2026-07-13T15:15:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 45,
+  },
+  {
+    id: 'tx-3',
+    childId: 'emma',
+    amount: 15,
+    type: 'credit',
+    description: 'Lecture terminee',
+    createdAt: '2026-07-12T18:05:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 80,
+  },
+  {
+    id: 'tx-4',
+    childId: 'lucas',
+    amount: -20,
+    type: 'reward',
+    description: '30 minutes de jeu video',
+    createdAt: '2026-07-10T16:40:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 105,
+  },
+  {
+    id: 'tx-5',
+    childId: 'emma',
+    amount: -12,
+    type: 'saving',
+    description: 'Versement objectif jeu video',
+    createdAt: '2026-07-09T19:10:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 65,
+  },
+  {
+    id: 'tx-6',
+    childId: 'noah',
+    amount: 10,
+    type: 'adjustment',
+    description: 'Correction solde initial',
+    createdAt: '2026-07-08T09:25:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 55,
+  },
+  {
+    id: 'tx-7',
+    childId: 'lucas',
+    amount: 30,
+    type: 'credit',
+    description: 'Bulletin avec efforts',
+    createdAt: '2026-07-05T18:20:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 125,
+  },
+  {
+    id: 'tx-8',
+    childId: 'emma',
+    amount: -15,
+    type: 'reward',
+    description: 'Choisir le dessert',
+    createdAt: '2026-07-03T12:00:00.000Z',
+    createdBy: 'Sophie Martin',
+    balanceAfter: 50,
+  },
+]
+
+export function getTransactionsByChildId(childId: string) {
+  return transactions.filter((transaction) => transaction.childId === childId)
+}
