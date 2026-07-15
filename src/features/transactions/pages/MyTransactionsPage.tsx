@@ -43,7 +43,7 @@ export function MyTransactionsPage() {
       ) : (
         <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
           <CardContent>
-            <TransactionList transactions={filteredTransactions} />
+            <TransactionList transactions={filteredTransactions} children={[child]} />
           </CardContent>
         </Card>
       )}

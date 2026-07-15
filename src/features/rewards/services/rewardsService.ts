@@ -215,7 +215,7 @@ export async function saveReward(reward: Reward): Promise<Reward> {
     .returns<RewardRow>()
 
   if (error) {
-    throwFrenchError(error, 'Impossible denregistrer cette recompense.')
+    throwFrenchError(error, "Impossible d'enregistrer cette recompense.")
   }
 
   return mapRewardRow(data)

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">KidBank</title>
+  <rect width="512" height="512" rx="112" fill="#6D5DFB"/>
+  <path fill="#4169E1" d="M0 318c84-48 176-72 276-72 84 0 163 17 236 50v216H0z"/>
+  <circle cx="373" cy="145" r="76" fill="#22C55E"/>
+  <path fill="#fff" d="M139 140h62v92l83-92h76l-96 104 104 128h-79l-72-90-16 17v73h-62z"/>
+</svg>

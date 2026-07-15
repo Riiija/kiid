@@ -25,16 +25,19 @@ import { useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
 import { EmptyState } from '../../../components/common/EmptyState'
 import { PageHeader } from '../../../components/common/PageHeader'
+import { PageSkeleton } from '../../../components/common/PageSkeleton'
 import { useAuth } from '../../auth/useAuth'
-import { children as initialChildren } from '../../../mocks/children'
 import { family, parentUser } from '../../../mocks/currentUser'
 import type { ChildAccount } from '../../../types/child'
+import { useChildren } from '../../children/hooks/useChildren'
 
 export function FamilySettingsPage() {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, profile } = useAuth()
+  const childrenQuery = useChildren()
+  const fetchedMembers = childrenQuery.data ?? []
   const [familyName, setFamilyName] = useState(family.name)
-  const [members, setMembers] = useState<ChildAccount[]>(initialChildren)
+  const [localMembers, setLocalMembers] = useState<ChildAccount[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [newChildName, setNewChildName] = useState('')
   const [targetChild, setTargetChild] = useState<ChildAccount | null>(null)
@@ -42,6 +45,7 @@ export function FamilySettingsPage() {
   const [snackbar, setSnackbar] = useState<string | null>(null)
   const [allowAvatarEdit, setAllowAvatarEdit] = useState(true)
   const [confirmLargeWithdrawals, setConfirmLargeWithdrawals] = useState(true)
+  const members = localMembers.length > 0 ? localMembers : fetchedMembers
 
   function createChild() {
     const trimmedName = newChildName.trim()
@@ -66,7 +70,7 @@ export function FamilySettingsPage() {
       mainGoalId: '',
     }
 
-    setMembers((current) => [...current, child])
+    setLocalMembers((current) => [...(current.length > 0 ? current : fetchedMembers), child])
     setCreateOpen(false)
     setNewChildName('')
     setSnackbar('Compte enfant cree en mode demonstration.')
@@ -106,7 +110,9 @@ export function FamilySettingsPage() {
                 Creer un enfant
               </Button>
             </Stack>
-            {members.length === 0 ? (
+            {childrenQuery.isLoading ? (
+              <PageSkeleton rows={2} />
+            ) : members.length === 0 ? (
               <EmptyState title="Ajoutez votre premier enfant." description="Les comptes enfants apparaitront dans cette liste." />
             ) : (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
@@ -146,7 +152,7 @@ export function FamilySettingsPage() {
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                   <Avatar sx={{ bgcolor: parentUser.avatarColor, fontWeight: 900 }}>{parentUser.avatarInitials}</Avatar>
                   <Stack>
-                    <Typography variant="h3">{parentUser.fullName}</Typography>
+                    <Typography variant="h3">{profile?.fullName ?? parentUser.fullName}</Typography>
                     <Typography color="text.secondary">{parentUser.email}</Typography>
                   </Stack>
                 </Stack>
@@ -200,7 +206,10 @@ export function FamilySettingsPage() {
         onCancel={() => setTargetChild(null)}
         onConfirm={() => {
           if (targetChild) {
-            setMembers((current) => current.map((child) => (child.id === targetChild.id ? { ...child, isActive: false } : child)))
+            setLocalMembers((current) => {
+              const baseMembers = current.length > 0 ? current : fetchedMembers
+              return baseMembers.map((child) => (child.id === targetChild.id ? { ...child, isActive: false } : child))
+            })
             setSnackbar('Compte enfant desactive en mode demonstration.')
             setTargetChild(null)
           }

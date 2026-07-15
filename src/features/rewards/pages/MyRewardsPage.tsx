@@ -9,8 +9,14 @@ import { RewardCard } from '../../../components/common/RewardCard'
 import type { Reward } from '../../../types/reward'
 import { formatDateLabel } from '../../../utils/formatters'
 import { rewardClaimStatusLabels } from '../../../utils/labels'
+import { toFrenchErrorMessage } from '../../../utils/errors'
 import { useChildren } from '../../children/hooks/useChildren'
 import { useRequestReward, useRewardClaims, useRewards } from '../hooks/useRewards'
+
+type SnackbarState = {
+  message: string
+  severity: 'success' | 'error'
+}
 
 export function MyRewardsPage() {
   const childrenQuery = useChildren()
@@ -20,15 +26,34 @@ export function MyRewardsPage() {
   const requestReward = useRequestReward()
   const [requestedReward, setRequestedReward] = useState<Reward | null>(null)
   const [requestedIds, setRequestedIds] = useState<string[]>([])
-  const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
 
   if (childrenQuery.isLoading || rewardsQuery.isLoading || rewardClaimsQuery.isLoading || !child) {
     return <PageSkeleton rows={3} />
   }
 
+  const activeChild = child
   const rewards = rewardsQuery.data ?? []
   const activeRewards = rewards.filter((reward) => reward.isActive)
   const claims = rewardClaimsQuery.data ?? []
+
+  async function confirmRequestReward() {
+    if (!requestedReward) {
+      return
+    }
+
+    try {
+      await requestReward.mutateAsync({
+        rewardId: requestedReward.id,
+        childAccountId: activeChild.id,
+      })
+      setRequestedIds((current) => [requestedReward.id, ...current])
+      setSnackbar({ message: 'Demande de recompense envoyee.', severity: 'success' })
+      setRequestedReward(null)
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Impossible de demander cette recompense.'), severity: 'error' })
+    }
+  }
 
   return (
     <Stack spacing={3}>
@@ -49,7 +74,7 @@ export function MyRewardsPage() {
                   key={reward.id}
                   reward={reward}
                   mode="child"
-                  childBalance={child.balance}
+                  childBalance={activeChild.balance}
                   onRequest={(targetReward) => setRequestedReward(targetReward)}
                 />
               ))}
@@ -103,21 +128,11 @@ export function MyRewardsPage() {
         description={requestedReward ? `Envoyer une demande pour ${requestedReward.name} ?` : ''}
         confirmLabel="Demander"
         onCancel={() => setRequestedReward(null)}
-        onConfirm={() => {
-          if (requestedReward) {
-            requestReward.mutate({
-              rewardId: requestedReward.id,
-              childAccountId: child.id,
-            })
-            setRequestedIds((current) => [requestedReward.id, ...current])
-            setSnackbar('Demande de recompense envoyee en mode demonstration.')
-            setRequestedReward(null)
-          }
-        }}
+        onConfirm={() => void confirmRequestReward()}
       />
       <Snackbar open={snackbar !== null} autoHideDuration={2600} onClose={() => setSnackbar(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSnackbar(null)}>
-          {snackbar}
+        <Alert severity={snackbar?.severity ?? 'success'} variant="filled" onClose={() => setSnackbar(null)}>
+          {snackbar?.message}
         </Alert>
       </Snackbar>
     </Stack>

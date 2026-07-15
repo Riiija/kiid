@@ -21,4 +21,5 @@ export const childNavigationItems: NavigationItem[] = [
   { label: 'QR Code', path: '/child/qr-code', icon: <QrCode2RoundedIcon /> },
   { label: 'Recompenses', path: '/child/rewards', icon: <EmojiEventsRoundedIcon /> },
   { label: 'Objectifs', path: '/child/savings', icon: <SavingsRoundedIcon /> },
+  { label: 'Parametres', path: '/child/settings', icon: <SettingsRoundedIcon /> },
 ]

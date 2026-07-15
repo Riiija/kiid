@@ -75,7 +75,7 @@ export async function saveSavingsGoal(goal: SavingsGoal): Promise<SavingsGoal> {
     .returns<SavingsGoalRow>()
 
   if (error) {
-    throwFrenchError(error, "Impossible denregistrer l'objectif d'epargne.")
+    throwFrenchError(error, "Impossible d'enregistrer l'objectif d'epargne.")
   }
 
   return mapSavingsGoalRow(data)

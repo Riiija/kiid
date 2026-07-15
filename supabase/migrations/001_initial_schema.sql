@@ -282,11 +282,8 @@ on public.profiles
 for insert
 to authenticated
 with check (
-  id = auth.uid()
-  or (
-    public.current_profile_role() = 'parent'
-    and family_id = public.current_family_id()
-  )
+  public.current_profile_role() = 'parent'
+  and family_id = public.current_family_id()
 );
 
 drop policy if exists "profiles_update_parent_family_or_self" on public.profiles;
@@ -483,6 +480,12 @@ with check (
     join public.profiles p on p.id = ca.profile_id
     where ca.id = reward_claims.child_account_id
       and p.family_id = public.current_family_id()
+  )
+  and exists (
+    select 1
+    from public.rewards r
+    where r.id = reward_claims.reward_id
+      and r.family_id = public.current_family_id()
   )
 );
 

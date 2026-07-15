@@ -12,7 +12,7 @@ const translatedErrorPatterns: Array<[RegExp, string]> = [
   [/child account not found for this family/i, "Ce compte enfant n'appartient pas a votre famille."],
   [/balances must be changed through create_child_transaction/i, 'Le solde ne peut etre modifie que par une transaction securisee.'],
   [/transactions are immutable/i, 'Les transactions ne peuvent pas etre modifiees.'],
-  [/profile security fields cannot be changed/i, 'Le role et la famille ne peuvent pas etre modifies depuis linterface.'],
+  [/profile security fields cannot be changed/i, "Le role et la famille ne peuvent pas etre modifies depuis l'interface."],
   [/row-level security|violates row-level security/i, "Action non autorisee pour votre compte KidBank."],
   [/duplicate key/i, 'Cette donnee existe deja.'],
   [/network|failed to fetch/i, 'Connexion a Supabase impossible. Verifiez votre reseau.'],

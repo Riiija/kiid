@@ -1,21 +1,33 @@
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded'
 import { Alert, Avatar, Button, Card, CardContent, FormControlLabel, Snackbar, Stack, Switch, Typography } from '@mui/material'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
 import { PageHeader } from '../../../components/common/PageHeader'
+import { PageSkeleton } from '../../../components/common/PageSkeleton'
 import { useAuth } from '../../auth/useAuth'
-import { children } from '../../../mocks/children'
+import { useChildren } from '../../children/hooks/useChildren'
 
 export function ChildSettingsPage() {
   const navigate = useNavigate()
   const { signOut } = useAuth()
-  const child = children[0]
-  const [avatarEditable, setAvatarEditable] = useState(child.canEditAvatar)
+  const childrenQuery = useChildren()
+  const child = childrenQuery.data?.[0]
+  const [avatarEditable, setAvatarEditable] = useState(true)
   const [compactMode, setCompactMode] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [snackbar, setSnackbar] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (child) {
+      setAvatarEditable(child.canEditAvatar)
+    }
+  }, [child?.canEditAvatar])
+
+  if (childrenQuery.isLoading || !child) {
+    return <PageSkeleton rows={2} />
+  }
 
   return (
     <Stack spacing={3}>

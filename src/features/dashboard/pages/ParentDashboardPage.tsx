@@ -21,8 +21,13 @@ import { useSavingsGoals } from '../../savings-goals/hooks/useSavingsGoals'
 import { useCreateChildTransaction, useTransactions } from '../../transactions/hooks/useTransactions'
 import type { ChildAccount } from '../../../types/child'
 import { formatKidCoins } from '../../../utils/formatters'
+import { toFrenchErrorMessage } from '../../../utils/errors'
 
 type PendingDebit = KidCoinActionPayload | null
+type SnackbarState = {
+  message: string
+  severity: 'success' | 'error'
+}
 
 export function ParentDashboardPage() {
   const childrenQuery = useChildren()
@@ -39,37 +44,59 @@ export function ParentDashboardPage() {
   const [dialogOperation, setDialogOperation] = useState<KidCoinOperation | null>(null)
   const [selectedChild, setSelectedChild] = useState<ChildAccount | undefined>(undefined)
   const [pendingDebit, setPendingDebit] = useState<PendingDebit>(null)
-  const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
 
   const displayedChildren = children.map((child) => ({ ...child, balance: balances[child.id] ?? child.balance }))
   const totalBalance = displayedChildren.reduce((sum, child) => sum + child.balance, 0)
   const pendingRewards = rewardClaims.filter((claim) => claim.status === 'pending').length
   const recentTransactions = transactions.slice(0, 4)
-  const isLoading = childrenQuery.isLoading || transactionsQuery.isLoading || rewardsQuery.isLoading || goalsQuery.isLoading
+  const isLoading =
+    childrenQuery.isLoading ||
+    transactionsQuery.isLoading ||
+    rewardsQuery.isLoading ||
+    rewardClaimsQuery.isLoading ||
+    goalsQuery.isLoading
 
   function openAction(operation: KidCoinOperation, child?: ChildAccount) {
     setSelectedChild(child)
     setDialogOperation(operation)
   }
 
-  function applyAction(payload: KidCoinActionPayload) {
+  async function applyAction(payload: KidCoinActionPayload) {
     const signedAmount = payload.operation === 'credit' ? payload.amount : -payload.amount
-    createTransaction.mutate({
-      childAccountId: payload.child.id,
-      amount: payload.amount,
-      transactionType: payload.operation,
-      description: payload.description,
-    })
-    setBalances((currentBalances) => ({
-      ...currentBalances,
-      [payload.child.id]: Math.max(0, (currentBalances[payload.child.id] ?? payload.child.balance) + signedAmount),
-    }))
-    setSnackbar(
-      `${payload.operation === 'credit' ? 'Ajout' : 'Retrait'} fictif de ${formatKidCoins(payload.amount)} pour ${payload.child.firstName}.`,
-    )
-    setDialogOperation(null)
-    setSelectedChild(undefined)
-    setPendingDebit(null)
+    const currentBalance = balances[payload.child.id] ?? payload.child.balance
+
+    if (currentBalance + signedAmount < 0) {
+      setSnackbar({ message: 'Solde insuffisant pour effectuer ce retrait.', severity: 'error' })
+      setDialogOperation(null)
+      setSelectedChild(undefined)
+      setPendingDebit(null)
+      return
+    }
+
+    try {
+      const transaction = await createTransaction.mutateAsync({
+        childAccountId: payload.child.id,
+        amount: payload.amount,
+        transactionType: payload.operation,
+        description: payload.description,
+      })
+
+      setBalances((currentBalances) => ({
+        ...currentBalances,
+        [payload.child.id]: transaction.balanceAfter,
+      }))
+      setSnackbar({
+        message: `${payload.operation === 'credit' ? 'Ajout' : 'Retrait'} de ${formatKidCoins(payload.amount)} pour ${payload.child.firstName}.`,
+        severity: 'success',
+      })
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation KidCoins impossible.'), severity: 'error' })
+    } finally {
+      setDialogOperation(null)
+      setSelectedChild(undefined)
+      setPendingDebit(null)
+    }
   }
 
   function handleActionSubmit(payload: KidCoinActionPayload) {
@@ -79,7 +106,7 @@ export function ParentDashboardPage() {
       return
     }
 
-    applyAction(payload)
+    void applyAction(payload)
   }
 
   return (
@@ -151,7 +178,7 @@ export function ParentDashboardPage() {
           </Stack>
           <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
             <CardContent>
-              <TransactionList transactions={recentTransactions} />
+              <TransactionList transactions={recentTransactions} children={displayedChildren} />
             </CardContent>
           </Card>
           <Card
@@ -179,6 +206,7 @@ export function ParentDashboardPage() {
       <KidCoinActionDialog
         open={dialogOperation !== null}
         operation={dialogOperation ?? 'credit'}
+        childOptions={displayedChildren}
         selectedChild={selectedChild}
         onClose={() => {
           setDialogOperation(null)
@@ -199,13 +227,13 @@ export function ParentDashboardPage() {
         onCancel={() => setPendingDebit(null)}
         onConfirm={() => {
           if (pendingDebit) {
-            applyAction(pendingDebit)
+            void applyAction(pendingDebit)
           }
         }}
       />
       <Snackbar open={snackbar !== null} autoHideDuration={2600} onClose={() => setSnackbar(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSnackbar(null)}>
-          {snackbar}
+        <Alert severity={snackbar?.severity ?? 'success'} variant="filled" onClose={() => setSnackbar(null)}>
+          {snackbar?.message}
         </Alert>
       </Snackbar>
     </Stack>

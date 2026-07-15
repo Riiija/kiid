@@ -17,7 +17,13 @@ import { useSavingsGoals } from '../../savings-goals/hooks/useSavingsGoals'
 import { useCreateChildTransaction, useTransactions } from '../../transactions/hooks/useTransactions'
 import { formatKidCoins } from '../../../utils/formatters'
 import { rewardClaimStatusLabels } from '../../../utils/labels'
+import { toFrenchErrorMessage } from '../../../utils/errors'
 import { useChild } from '../hooks/useChildren'
+
+type SnackbarState = {
+  message: string
+  severity: 'success' | 'error'
+}
 
 export function ChildDetailsPage() {
   const { childId } = useParams()
@@ -31,7 +37,7 @@ export function ChildDetailsPage() {
   const [balanceOverride, setBalanceOverride] = useState<number | null>(null)
   const [operation, setOperation] = useState<KidCoinOperation | null>(null)
   const [pendingDebit, setPendingDebit] = useState<KidCoinActionPayload | null>(null)
-  const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
 
   useEffect(() => {
     setBalanceOverride(null)
@@ -61,18 +67,36 @@ export function ChildDetailsPage() {
   const childClaims = rewardClaimsQuery.data ?? []
   const rewards = rewardsQuery.data ?? []
 
-  function applyAction(payload: KidCoinActionPayload) {
+  async function applyAction(payload: KidCoinActionPayload) {
     const signedAmount = payload.operation === 'credit' ? payload.amount : -payload.amount
-    createTransaction.mutate({
-      childAccountId: payload.child.id,
-      amount: payload.amount,
-      transactionType: payload.operation,
-      description: payload.description,
-    })
-    setBalanceOverride((current) => Math.max(0, (current ?? payload.child.balance) + signedAmount))
-    setSnackbar(`${payload.operation === 'credit' ? 'Ajout' : 'Retrait'} fictif de ${formatKidCoins(payload.amount)}.`)
-    setOperation(null)
-    setPendingDebit(null)
+    const currentBalance = balanceOverride ?? payload.child.balance
+
+    if (currentBalance + signedAmount < 0) {
+      setSnackbar({ message: 'Solde insuffisant pour effectuer ce retrait.', severity: 'error' })
+      setOperation(null)
+      setPendingDebit(null)
+      return
+    }
+
+    try {
+      const transaction = await createTransaction.mutateAsync({
+        childAccountId: payload.child.id,
+        amount: payload.amount,
+        transactionType: payload.operation,
+        description: payload.description,
+      })
+
+      setBalanceOverride(transaction.balanceAfter)
+      setSnackbar({
+        message: `${payload.operation === 'credit' ? 'Ajout' : 'Retrait'} de ${formatKidCoins(payload.amount)}.`,
+        severity: 'success',
+      })
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation KidCoins impossible.'), severity: 'error' })
+    } finally {
+      setOperation(null)
+      setPendingDebit(null)
+    }
   }
 
   function handleSubmit(payload: KidCoinActionPayload) {
@@ -82,7 +106,7 @@ export function ChildDetailsPage() {
       return
     }
 
-    applyAction(payload)
+    void applyAction(payload)
   }
 
   return (
@@ -132,7 +156,7 @@ export function ChildDetailsPage() {
             <Typography variant="h2">Historique recent</Typography>
             <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
               <CardContent>
-                <TransactionList transactions={childTransactions.slice(0, 4)} />
+                <TransactionList transactions={childTransactions.slice(0, 4)} children={[displayedChild]} />
               </CardContent>
             </Card>
           </Stack>
@@ -175,6 +199,7 @@ export function ChildDetailsPage() {
       <KidCoinActionDialog
         open={operation !== null}
         operation={operation ?? 'credit'}
+        childOptions={[displayedChild]}
         selectedChild={displayedChild}
         onClose={() => setOperation(null)}
         onSubmit={handleSubmit}
@@ -188,13 +213,13 @@ export function ChildDetailsPage() {
         onCancel={() => setPendingDebit(null)}
         onConfirm={() => {
           if (pendingDebit) {
-            applyAction(pendingDebit)
+            void applyAction(pendingDebit)
           }
         }}
       />
       <Snackbar open={snackbar !== null} autoHideDuration={2600} onClose={() => setSnackbar(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSnackbar(null)}>
-          {snackbar}
+        <Alert severity={snackbar?.severity ?? 'success'} variant="filled" onClose={() => setSnackbar(null)}>
+          {snackbar?.message}
         </Alert>
       </Snackbar>
     </Stack>

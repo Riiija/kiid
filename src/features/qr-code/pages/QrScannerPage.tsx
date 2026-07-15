@@ -14,21 +14,67 @@ import { findChildByQrToken } from '../../children/services/childrenService'
 import { getMainGoalForChild } from '../../../mocks/savingsGoals'
 import type { ChildAccount } from '../../../types/child'
 import { formatKidCoins } from '../../../utils/formatters'
+import { toFrenchErrorMessage } from '../../../utils/errors'
+import { useCreateChildTransaction } from '../../transactions/hooks/useTransactions'
+
+type SnackbarState = {
+  message: string
+  severity: 'success' | 'info' | 'error'
+}
 
 export function QrScannerPage() {
   const childrenQuery = useChildren()
+  const createTransaction = useCreateChildTransaction()
   const children = childrenQuery.data ?? []
   const [cameraStatus, setCameraStatus] = useState<'idle' | 'ready' | 'error'>('idle')
   const [manualToken, setManualToken] = useState('')
   const [detectedChild, setDetectedChild] = useState<ChildAccount | null>(null)
   const [operation, setOperation] = useState<KidCoinOperation | null>(null)
   const [pendingDebit, setPendingDebit] = useState<KidCoinActionPayload | null>(null)
-  const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
 
   async function detectToken(token: string) {
-    const child = await findChildByQrToken(token)
-    setDetectedChild(child ?? null)
-    setSnackbar(child ? `${child.firstName} detecte.` : 'Token QR invalide pour cette famille.')
+    try {
+      const child = await findChildByQrToken(token)
+      setDetectedChild(child ?? null)
+      setSnackbar({
+        message: child ? `${child.firstName} detecte.` : 'Token QR invalide pour cette famille.',
+        severity: child ? 'success' : 'info',
+      })
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Impossible de lire ce QR code.'), severity: 'error' })
+    }
+  }
+
+  async function applyAction(payload: KidCoinActionPayload) {
+    const signedAmount = payload.operation === 'credit' ? payload.amount : -payload.amount
+
+    if (payload.child.balance + signedAmount < 0) {
+      setSnackbar({ message: 'Solde insuffisant pour effectuer ce retrait.', severity: 'error' })
+      setPendingDebit(null)
+      setOperation(null)
+      return
+    }
+
+    try {
+      const transaction = await createTransaction.mutateAsync({
+        childAccountId: payload.child.id,
+        amount: payload.amount,
+        transactionType: payload.operation,
+        description: payload.description,
+      })
+
+      setDetectedChild((current) => current && current.id === payload.child.id ? { ...current, balance: transaction.balanceAfter } : current)
+      setSnackbar({
+        message: `${payload.operation === 'credit' ? 'Ajout' : 'Retrait'} de ${formatKidCoins(payload.amount)} pour ${payload.child.firstName}.`,
+        severity: 'success',
+      })
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Operation KidCoins impossible.'), severity: 'error' })
+    } finally {
+      setPendingDebit(null)
+      setOperation(null)
+    }
   }
 
   function handleAction(payload: KidCoinActionPayload) {
@@ -38,8 +84,7 @@ export function QrScannerPage() {
       return
     }
 
-    setSnackbar(`Ajout fictif de ${formatKidCoins(payload.amount)} pour ${payload.child.firstName}.`)
-    setOperation(null)
+    void applyAction(payload)
   }
 
   return (
@@ -141,6 +186,7 @@ export function QrScannerPage() {
       <KidCoinActionDialog
         open={operation !== null}
         operation={operation ?? 'credit'}
+        childOptions={detectedChild ? [detectedChild] : children}
         selectedChild={detectedChild ?? undefined}
         onClose={() => setOperation(null)}
         onSubmit={handleAction}
@@ -154,14 +200,13 @@ export function QrScannerPage() {
         onCancel={() => setPendingDebit(null)}
         onConfirm={() => {
           if (pendingDebit) {
-            setSnackbar(`Retrait fictif de ${formatKidCoins(pendingDebit.amount)} pour ${pendingDebit.child.firstName}.`)
-            setPendingDebit(null)
+            void applyAction(pendingDebit)
           }
         }}
       />
       <Snackbar open={snackbar !== null} autoHideDuration={2600} onClose={() => setSnackbar(null)}>
-        <Alert severity={detectedChild ? 'success' : 'info'} variant="filled" onClose={() => setSnackbar(null)}>
-          {snackbar}
+        <Alert severity={snackbar?.severity ?? 'info'} variant="filled" onClose={() => setSnackbar(null)}>
+          {snackbar?.message}
         </Alert>
       </Snackbar>
     </Stack>

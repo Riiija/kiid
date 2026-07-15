@@ -8,42 +8,94 @@ import { PageHeader } from '../../../components/common/PageHeader'
 import { PageSkeleton } from '../../../components/common/PageSkeleton'
 import { RewardCard } from '../../../components/common/RewardCard'
 import { RewardFormDialog } from '../../../components/common/RewardFormDialog'
-import type { Reward } from '../../../types/reward'
+import type { Reward, RewardClaim } from '../../../types/reward'
 import { formatDateLabel } from '../../../utils/formatters'
 import { rewardClaimStatusLabels } from '../../../utils/labels'
+import { toFrenchErrorMessage } from '../../../utils/errors'
 import { useChildren } from '../../children/hooks/useChildren'
-import { useRewardClaims, useRewards, useSaveReward } from '../hooks/useRewards'
+import { useReviewRewardClaim, useRewardClaims, useRewards, useSaveReward } from '../hooks/useRewards'
+
+type SnackbarState = {
+  message: string
+  severity: 'success' | 'error'
+}
 
 export function RewardsManagementPage() {
   const childrenQuery = useChildren()
   const rewardsQuery = useRewards()
   const rewardClaimsQuery = useRewardClaims()
   const saveReward = useSaveReward()
+  const reviewRewardClaim = useReviewRewardClaim()
   const children = childrenQuery.data ?? []
   const [localRewards, setLocalRewards] = useState<Reward[]>([])
   const [editingReward, setEditingReward] = useState<Reward | undefined>(undefined)
   const [formOpen, setFormOpen] = useState(false)
   const [toggleReward, setToggleReward] = useState<Reward | null>(null)
-  const [approvalReward, setApprovalReward] = useState<Reward | null>(null)
-  const [snackbar, setSnackbar] = useState<string | null>(null)
+  const [approvalClaim, setApprovalClaim] = useState<RewardClaim | null>(null)
+  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
 
-  const rewards = localRewards.length > 0 ? localRewards : rewardsQuery.data ?? []
   const rewardClaims = rewardClaimsQuery.data ?? []
+  const baseRewards = rewardsQuery.data ?? []
+  const enrichedRewards = baseRewards.map((reward) => ({
+    ...reward,
+    pendingClaims: rewardClaims.filter((claim) => claim.rewardId === reward.id && claim.status === 'pending').length,
+  }))
+  const rewards = localRewards.length > 0 ? localRewards : enrichedRewards
   const pendingClaims = rewardClaims.filter((claim) => claim.status === 'pending')
 
-  function handleSave(reward: Reward) {
-    saveReward.mutate(reward)
-    setLocalRewards((currentRewards) => {
-      const baseRewards = currentRewards.length > 0 ? currentRewards : rewards
-      const exists = baseRewards.some((item) => item.id === reward.id)
+  async function handleSave(reward: Reward) {
+    try {
+      const savedReward = await saveReward.mutateAsync(reward)
+      setLocalRewards((currentRewards) => {
+        const baseRewards = currentRewards.length > 0 ? currentRewards : rewards
+        const exists = baseRewards.some((item) => item.id === reward.id || item.id === savedReward.id)
 
-      return exists
-        ? baseRewards.map((item) => (item.id === reward.id ? reward : item))
-        : [reward, ...baseRewards]
-    })
-    setFormOpen(false)
-    setEditingReward(undefined)
-    setSnackbar('Recompense enregistree en mode demonstration.')
+        return exists
+          ? baseRewards.map((item) => (item.id === reward.id || item.id === savedReward.id ? savedReward : item))
+          : [savedReward, ...baseRewards]
+      })
+      setFormOpen(false)
+      setEditingReward(undefined)
+      setSnackbar({ message: 'Recompense enregistree.', severity: 'success' })
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, "Impossible d'enregistrer cette recompense."), severity: 'error' })
+    }
+  }
+
+  async function confirmToggleReward() {
+    if (!toggleReward) {
+      return
+    }
+
+    try {
+      const savedReward = await saveReward.mutateAsync({ ...toggleReward, isActive: !toggleReward.isActive })
+      setLocalRewards((currentRewards) => {
+        const baseRewards = currentRewards.length > 0 ? currentRewards : rewards
+        return baseRewards.map((reward) => (reward.id === savedReward.id ? savedReward : reward))
+      })
+      setSnackbar({ message: 'Statut de recompense mis a jour.', severity: 'success' })
+      setToggleReward(null)
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Impossible de modifier cette recompense.'), severity: 'error' })
+    }
+  }
+
+  async function confirmApproval() {
+    if (!approvalClaim) {
+      return
+    }
+
+    try {
+      await reviewRewardClaim.mutateAsync({
+        claimId: approvalClaim.id,
+        status: 'approved',
+        comment: 'Validee depuis KidBank.',
+      })
+      setSnackbar({ message: 'Demande de recompense validee.', severity: 'success' })
+      setApprovalClaim(null)
+    } catch (error) {
+      setSnackbar({ message: toFrenchErrorMessage(error, 'Impossible de valider cette demande.'), severity: 'error' })
+    }
   }
 
   return (
@@ -83,7 +135,9 @@ export function RewardsManagementPage() {
                     setFormOpen(true)
                   }}
                   onToggle={(targetReward) => setToggleReward(targetReward)}
-                  onApprove={(targetReward) => setApprovalReward(targetReward)}
+                  onApprove={(targetReward) => {
+                    setApprovalClaim(pendingClaims.find((claim) => claim.rewardId === targetReward.id) ?? null)
+                  }}
                 />
               ))}
             </Box>
@@ -113,11 +167,7 @@ export function RewardsManagementPage() {
                       <Button
                         variant="contained"
                         startIcon={<EmojiEventsRoundedIcon />}
-                        onClick={() => {
-                          if (reward) {
-                            setApprovalReward(reward)
-                          }
-                        }}
+                        onClick={() => setApprovalClaim(claim)}
                       >
                         Valider
                       </Button>
@@ -137,7 +187,7 @@ export function RewardsManagementPage() {
           setFormOpen(false)
           setEditingReward(undefined)
         }}
-        onSave={handleSave}
+        onSave={(reward) => void handleSave(reward)}
       />
       <ConfirmDialog
         open={toggleReward !== null}
@@ -146,33 +196,23 @@ export function RewardsManagementPage() {
         confirmLabel={toggleReward?.isActive ? 'Desactiver' : 'Activer'}
         confirmColor={toggleReward?.isActive ? 'warning' : 'primary'}
         onCancel={() => setToggleReward(null)}
-        onConfirm={() => {
-          if (toggleReward) {
-            setLocalRewards((currentRewards) => {
-              const baseRewards = currentRewards.length > 0 ? currentRewards : rewards
-              return baseRewards.map((reward) =>
-                reward.id === toggleReward.id ? { ...reward, isActive: !reward.isActive } : reward,
-              )
-            })
-            setSnackbar('Statut de recompense mis a jour en mode demonstration.')
-            setToggleReward(null)
-          }
-        }}
+        onConfirm={() => void confirmToggleReward()}
       />
       <ConfirmDialog
-        open={approvalReward !== null}
+        open={approvalClaim !== null}
         title="Valider une recompense"
-        description={approvalReward ? `Confirmer la validation mockee de ${approvalReward.name} ?` : ''}
+        description={
+          approvalClaim
+            ? `Confirmer la validation de ${rewards.find((reward) => reward.id === approvalClaim.rewardId)?.name ?? 'cette recompense'} ?`
+            : ''
+        }
         confirmLabel="Valider"
-        onCancel={() => setApprovalReward(null)}
-        onConfirm={() => {
-          setSnackbar('Demande de recompense validee en mode demonstration.')
-          setApprovalReward(null)
-        }}
+        onCancel={() => setApprovalClaim(null)}
+        onConfirm={() => void confirmApproval()}
       />
       <Snackbar open={snackbar !== null} autoHideDuration={2600} onClose={() => setSnackbar(null)}>
-        <Alert severity="success" variant="filled" onClose={() => setSnackbar(null)}>
-          {snackbar}
+        <Alert severity={snackbar?.severity ?? 'success'} variant="filled" onClose={() => setSnackbar(null)}>
+          {snackbar?.message}
         </Alert>
       </Snackbar>
     </Stack>

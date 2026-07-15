@@ -85,7 +85,7 @@ export function ChildDashboardPage() {
         </Stack>
         <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
           <CardContent>
-            <TransactionList transactions={childTransactions.slice(0, 2)} />
+            <TransactionList transactions={childTransactions.slice(0, 2)} children={[child]} />
           </CardContent>
         </Card>
       </Stack>

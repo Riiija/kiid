@@ -6,12 +6,15 @@ import { PageSkeleton } from '../../../components/common/PageSkeleton'
 import { TransactionFilters } from '../../../components/common/TransactionFilters'
 import { TransactionList } from '../../../components/common/TransactionList'
 import type { TransactionFiltersState } from '../../../types/transaction'
+import { useChildren } from '../../children/hooks/useChildren'
 import { useTransactions } from '../hooks/useTransactions'
 
 const pageSize = 5
 
 export function TransactionsPage() {
+  const childrenQuery = useChildren()
   const transactionsQuery = useTransactions()
+  const children = childrenQuery.data ?? []
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<TransactionFiltersState>({
     childId: 'all',
@@ -52,12 +55,12 @@ export function TransactionsPage() {
           setPage(1)
         }}
       />
-      {transactionsQuery.isLoading ? (
+      {childrenQuery.isLoading || transactionsQuery.isLoading ? (
         <PageSkeleton rows={3} />
       ) : (
         <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
           <CardContent>
-            <TransactionList transactions={visibleTransactions} />
+            <TransactionList transactions={visibleTransactions} children={children} />
             <Box sx={{ display: 'flex', justifyContent: 'center', pt: visibleTransactions.length > 0 ? 2 : 0 }}>
               {visibleTransactions.length < filteredTransactions.length ? (
                 <Button variant="outlined" startIcon={<ReceiptLongRoundedIcon />} onClick={() => setPage((current) => current + 1)}>
