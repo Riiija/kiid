@@ -156,7 +156,7 @@ export function ChildDetailsPage() {
             <Typography variant="h2">Historique recent</Typography>
             <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
               <CardContent>
-                <TransactionList transactions={childTransactions.slice(0, 4)} children={[displayedChild]} />
+                <TransactionList transactions={childTransactions.slice(0, 4)} childAccounts={[displayedChild]} />
               </CardContent>
             </Card>
           </Stack>

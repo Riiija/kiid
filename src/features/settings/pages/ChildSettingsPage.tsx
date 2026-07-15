@@ -14,16 +14,17 @@ export function ChildSettingsPage() {
   const { signOut } = useAuth()
   const childrenQuery = useChildren()
   const child = childrenQuery.data?.[0]
+  const canEditAvatar = child?.canEditAvatar
   const [avatarEditable, setAvatarEditable] = useState(true)
   const [compactMode, setCompactMode] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
   const [snackbar, setSnackbar] = useState<string | null>(null)
 
   useEffect(() => {
-    if (child) {
-      setAvatarEditable(child.canEditAvatar)
+    if (canEditAvatar !== undefined) {
+      setAvatarEditable(canEditAvatar)
     }
-  }, [child?.canEditAvatar])
+  }, [canEditAvatar])
 
   if (childrenQuery.isLoading || !child) {
     return <PageSkeleton rows={2} />

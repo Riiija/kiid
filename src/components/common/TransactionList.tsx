@@ -8,14 +8,14 @@ import { transactionTypeLabels } from '../../utils/labels'
 
 type TransactionListProps = {
   transactions: KidTransaction[]
-  children?: ChildAccount[]
+  childAccounts?: ChildAccount[]
   emptyTitle?: string
   emptyDescription?: string
 }
 
 export function TransactionList({
   transactions,
-  children = [],
+  childAccounts = [],
   emptyTitle = 'Aucune transaction pour le moment.',
   emptyDescription = "Les mouvements apparaitront ici des qu'ils seront crees.",
 }: TransactionListProps) {
@@ -26,7 +26,7 @@ export function TransactionList({
   return (
     <List disablePadding>
       {transactions.map((transaction) => {
-        const child = children.find((item) => item.id === transaction.childId)
+        const child = childAccounts.find((item) => item.id === transaction.childId)
         const childName = child?.firstName ?? 'Enfant'
 
         return (

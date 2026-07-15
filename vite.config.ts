@@ -4,6 +4,31 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return undefined
+          }
+
+          if (id.includes('@mui')) {
+            return 'mui'
+          }
+
+          if (id.includes('@supabase') || id.includes('@tanstack')) {
+            return 'data'
+          }
+
+          if (id.includes('react') || id.includes('react-router')) {
+            return 'react'
+          }
+
+          return 'vendor'
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -30,6 +55,9 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
+      },
+      devOptions: {
+        enabled: true,
       },
     }),
   ],

@@ -60,7 +60,7 @@ export function TransactionsPage() {
       ) : (
         <Card variant="outlined" sx={{ borderColor: 'rgba(109, 93, 251, 0.12)' }}>
           <CardContent>
-            <TransactionList transactions={visibleTransactions} children={children} />
+            <TransactionList transactions={visibleTransactions} childAccounts={children} />
             <Box sx={{ display: 'flex', justifyContent: 'center', pt: visibleTransactions.length > 0 ? 2 : 0 }}>
               {visibleTransactions.length < filteredTransactions.length ? (
                 <Button variant="outlined" startIcon={<ReceiptLongRoundedIcon />} onClick={() => setPage((current) => current + 1)}>
